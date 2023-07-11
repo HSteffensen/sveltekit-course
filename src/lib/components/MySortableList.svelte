@@ -2,49 +2,54 @@
     import { flip } from "svelte/animate";
     import { createEventDispatcher } from "svelte";
 
-    export let list: any[];
+    type T = $$Generic<{ id: string }>;
+    export let list: T[];
     let isOver: string | boolean = false;
 
-    const dispatch = createEventDispatcher();
+    const dispatch = createEventDispatcher<{ sort: T[] }>();
 
-    function getDraggedParent(node: any) {
-        if (!node.dataset.index) {
-            return getDraggedParent(node.parentNode);
+    function getDraggedParent(node: Node) {
+        if (!(node instanceof HTMLElement) || !node.dataset.index) {
+            return getDraggedParent(node.parentElement!);
         } else {
-            return { ...node.dataset };
+            return { ...node.dataset } as { index: string; id: string };
         }
     }
 
     function onDragStart(e: DragEvent) {
-        // @ts-ignore
-        const dragged = getDraggedParent(e.target);
-        e.dataTransfer?.setData("source", dragged?.index.toString());
+        if (e.target instanceof Node) {
+            const dragged = getDraggedParent(e.target);
+            e.dataTransfer?.setData("source", dragged?.index.toString());
+        }
     }
 
     function onDragOver(e: DragEvent) {
-        // @ts-ignore
-        const id = e.target.dataset?.id;
-        const dragged = getDraggedParent(e.target);
-        isOver = dragged?.id ?? false;
+        if (e.target instanceof Node) {
+            const dragged = getDraggedParent(e.target);
+            isOver = dragged?.id ?? false;
+        }
     }
 
     function onDragLeave(e: DragEvent) {
-        const dragged = getDraggedParent(e.target);
-        isOver === dragged.id && (isOver = false);
+        if (e.target instanceof Node) {
+            const dragged = getDraggedParent(e.target);
+            isOver === dragged.id && (isOver = false);
+        }
     }
 
     function onDrop(e: DragEvent) {
-        isOver = false;
-        const dragged = getDraggedParent(e.target);
-        reorder({
-            from: e.dataTransfer?.getData("source"),
-            to: dragged.index,
-        });
+        if (e.target instanceof Node) {
+            isOver = false;
+            const dragged = getDraggedParent(e.target);
+            reorder(e.dataTransfer?.getData("source")!, dragged.index);
+        }
     }
 
-    const reorder = ({ from, to }: any) => {
+    const reorder = (from: any, to: any) => {
         const newList = [...list];
-        newList[from] = [newList[to], (newList[to] = newList[from])][0];
+        const fromValue = newList[from];
+        newList[from] = newList[to];
+        newList[to] = fromValue;
 
         dispatch("sort", newList);
     };

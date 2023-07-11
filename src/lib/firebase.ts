@@ -78,11 +78,18 @@ export function docStore<T>(
   };
 }
 
-interface UserData {
+export interface UserData {
   username: string;
   bio: string;
   photoURL: string;
-  links: unknown[];
+  links: UserLinkData[];
+}
+
+export interface UserLinkData {
+  id: string,
+  url: string,
+  title: string,
+  icon: string
 }
 
 export const userData: Readable<UserData | null> = derived(user, ($user, set) => {
