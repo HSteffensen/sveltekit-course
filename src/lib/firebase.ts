@@ -14,8 +14,8 @@ const firebaseConfig = {
     storageBucket: "sveltekit-course-d4906.appspot.com",
     messagingSenderId: "207009999570",
     appId: "1:207009999570:web:ada71abee32c2b383e1b0b",
-    measurementId: "G-F1MS4SGKTM"
-  };
+    measurementId: "G-F1MS4SGKTM",
+};
 
 // Initialize Firebase
 export const app = initializeApp(firebaseConfig);
@@ -27,27 +27,27 @@ export const storage = getStorage();
  * @returns a store with the current firebase user
  */
 function userStore() {
-  let unsubscribe: () => void;
+    let unsubscribe: () => void;
 
-  if (!auth || !globalThis.window) {
-    console.warn('Auth is not initialized or not in browser');
-    const { subscribe } = writable<User | null>(null);
-    return {
-      subscribe,
+    if (!auth || !globalThis.window) {
+        console.warn("Auth is not initialized or not in browser");
+        const { subscribe } = writable<User | null>(null);
+        return {
+            subscribe,
+        };
     }
-  }
 
-  const { subscribe } = writable(auth?.currentUser ?? null, (set) => {
-    unsubscribe = onAuthStateChanged(auth, (user) => {
-      set(user);
+    const { subscribe } = writable(auth?.currentUser ?? null, (set) => {
+        unsubscribe = onAuthStateChanged(auth, (user) => {
+            set(user);
+        });
+
+        return () => unsubscribe();
     });
 
-    return () => unsubscribe();
-  });
-
-  return {
-    subscribe,
-  };
+    return {
+        subscribe,
+    };
 }
 
 export const user = userStore();
@@ -56,46 +56,44 @@ export const user = userStore();
  * @param  {string} path document path or reference
  * @returns a store with realtime updates on document data
  */
-export function docStore<T>(
-  path: string,
-) {
-  let unsubscribe: () => void;
+export function docStore<T>(path: string) {
+    let unsubscribe: () => void;
 
-  const docRef = doc(db, path);
+    const docRef = doc(db, path);
 
-  const { subscribe } = writable<T | null>(null, (set) => {
-    unsubscribe = onSnapshot(docRef, (snapshot) => {
-      set((snapshot.data() as T) ?? null);
+    const { subscribe } = writable<T | null>(null, (set) => {
+        unsubscribe = onSnapshot(docRef, (snapshot) => {
+            set((snapshot.data() as T) ?? null);
+        });
+
+        return () => unsubscribe();
     });
 
-    return () => unsubscribe();
-  });
-
-  return {
-    subscribe,
-    ref: docRef,
-    id: docRef.id,
-  };
+    return {
+        subscribe,
+        ref: docRef,
+        id: docRef.id,
+    };
 }
 
 export interface UserData {
-  username: string;
-  bio: string;
-  photoURL: string;
-  links: UserLinkData[];
+    username: string;
+    bio: string;
+    photoURL: string;
+    links: UserLinkData[];
 }
 
 export interface UserLinkData {
-  id: string,
-  url: string,
-  title: string,
-  icon: string
+    id: string;
+    url: string;
+    title: string;
+    icon: string;
 }
 
 export const userData: Readable<UserData | null> = derived(user, ($user, set) => {
-  if ($user) {
-    return docStore<UserData>(`users/${$user.uid}`).subscribe(set);
-  } else {
-    set(null); 
-  }
+    if ($user) {
+        return docStore<UserData>(`users/${$user.uid}`).subscribe(set);
+    } else {
+        set(null);
+    }
 });
